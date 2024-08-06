@@ -15,6 +15,10 @@ export function isIssueLabelEvent(context: Context): context is Context & {
   return context.eventName === "issues.labeled" || context.eventName === "issues.unlabeled";
 }
 
+export function isPushEvent(context: Context): context is Context & { payload: Context<"push">["payload"] } {
+  return context.eventName === "push";
+}
+
 export function isLabelEditedEvent(context: Context): context is Context & {
   payload: {
     label: Context<"label.edited">["payload"]["label"];

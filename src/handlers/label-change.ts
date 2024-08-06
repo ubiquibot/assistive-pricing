@@ -19,22 +19,30 @@ export async function watchLabelChange(context: Context) {
     throw new Error(errorMessage);
   }
   const currentLabel = label?.name;
-  const triggerUser = sender.login;
+  const triggerUser = sender?.login;
+  const triggerUserId = sender?.id;
 
   if (!previousLabel || !currentLabel) {
     return logger.debug("No label name change.. skipping");
   }
 
+  if (!triggerUser || !triggerUserId) {
+    return logger.debug("No user found.. skipping");
+  }
+
   // check if user is authorized to make the change
   const hasAccess = await hasLabelEditPermission(context, currentLabel, triggerUser);
+
+
 
   await context.adapters.supabase.label.saveLabelChange({
     previousLabel,
     currentLabel,
     authorized: hasAccess,
     repositoryId: payload.repository.id,
-    userId: sender.id,
+    userId: triggerUserId,
   });
+
   return logger.debug("label name change saved to db");
 }
 

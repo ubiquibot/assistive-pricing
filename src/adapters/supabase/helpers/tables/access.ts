@@ -20,7 +20,7 @@ export class Access extends Super {
       .maybeSingle();
 
     if (error) {
-      this.context.logger.fatal(error.message, error);
+      this.context.logger.error(error.message, error);
       throw new Error(error.message);
     }
     return data;

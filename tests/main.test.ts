@@ -111,7 +111,8 @@ describe("User tests", () => {
     const result = await workerFetch.fetch(
       {
         method: "GET",
-      } as unknown as Request,
+        url: "https://example.com",
+      } as Request,
       {
         SUPABASE_URL: "url",
         SUPABASE_KEY: "key",

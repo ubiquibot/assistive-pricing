@@ -8,8 +8,13 @@ const COLORS = { default: "ededed", price: "1f883d" };
 export async function listLabelsForRepo(context: Context): Promise<Label[]> {
   const payload = context.payload;
 
+  const owner = payload.repository.owner?.login;
+  if (!owner) {
+    throw context.logger.error("No owner found in the repository!");
+  }
+
   const res = await context.octokit.rest.issues.listLabelsForRepo({
-    owner: payload.repository.owner.login,
+    owner,
     repo: payload.repository.name,
     per_page: 100,
     page: 1,
@@ -19,14 +24,19 @@ export async function listLabelsForRepo(context: Context): Promise<Label[]> {
     return res.data;
   }
 
-  throw context.logger.fatal("Failed to fetch lists of labels", { status: res.status });
+  throw context.logger.error("Failed to fetch lists of labels", { status: res.status });
 }
 
 export async function createLabel(context: Context, name: string, labelType = "default" as keyof typeof COLORS): Promise<void> {
   const payload = context.payload;
 
+  const owner = payload.repository.owner?.login;
+  if (!owner) {
+    throw context.logger.error("No owner found in the repository!");
+  }
+
   await context.octokit.rest.issues.createLabel({
-    owner: payload.repository.owner.login,
+    owner,
     repo: payload.repository.name,
     name,
     color: COLORS[labelType],
@@ -52,8 +62,8 @@ export async function clearAllPriceLabelsOnIssue(context: Context) {
         issue_number: payload.issue.number,
         name: label.name,
       });
-    } catch (e: unknown) {
-      context.logger.fatal("Clearing all price labels failed!", e);
+    } catch (err: unknown) {
+      context.logger.error("Clearing all price labels failed!", { err });
     }
   }
 }
@@ -71,8 +81,8 @@ export async function addLabelToIssue(context: Context, labelName: string) {
       issue_number: payload.issue.number,
       labels: [labelName],
     });
-  } catch (e: unknown) {
-    context.logger.fatal("Adding a label to issue failed!", e);
+  } catch (err: unknown) {
+    context.logger.error("Adding a label to issue failed!", { err });
   }
 }
 
@@ -89,7 +99,7 @@ export async function removeLabelFromIssue(context: Context, labelName: string) 
       issue_number: payload.issue.number,
       name: labelName,
     });
-  } catch (e: unknown) {
-    context.logger.fatal("Adding a label to issue failed!", e);
+  } catch (err: unknown) {
+    context.logger.error("Adding a label to issue failed!", { err });
   }
 }

@@ -12,6 +12,14 @@ export interface PluginInputs<T extends WebhookEventName = SupportedEvents> {
 }
 
 export const assistivePricingSettingsSchema = T.Object({
+  globalConfigUpdate: T.Optional(
+    T.Object(
+      {
+        excludeRepos: T.Array(T.String(), { default: [] }),
+      },
+      { default: {} }
+    )
+  ),
   labels: T.Object(
     {
       time: T.Array(T.String(), { default: [] }),
@@ -30,3 +38,8 @@ export const assistivePricingSettingsSchema = T.Object({
 });
 
 export type AssistivePricingSettings = StaticDecode<typeof assistivePricingSettingsSchema>;
+
+export type Rates = {
+  previousBaseRate: number | null;
+  newBaseRate: number | null;
+};

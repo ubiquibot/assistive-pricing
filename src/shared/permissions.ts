@@ -17,16 +17,26 @@ export async function labelAccessPermissionsCheck(context: Context) {
     logger.info("Public access control is enabled for setting labels");
     return true;
   }
-  if (payload.sender.type === UserType.Bot) {
+  if (payload.sender?.type === UserType.Bot) {
     logger.info("Bot has full control over all labels");
     return true;
   }
 
-  const sender = payload.sender.login;
+  const sender = payload.sender?.login;
+  if (!sender) {
+    throw logger.error("No sender found in the payload");
+  }
+
   const repo = payload.repository;
   const sufficientPrivileges = await isUserAdminOrBillingManager(context, sender);
   // event in plain english
-  const eventName = payload.action === "labeled" ? "add" : "remove";
+  let action;
+  if ("action" in payload) {
+    action = payload.action
+  } else {
+    throw new Error("No action found in payload")
+  }
+  const eventName = action === "labeled" ? "add" : "remove";
   const labelName = payload.label.name;
 
   // get text before :
@@ -51,9 +61,9 @@ export async function labelAccessPermissionsCheck(context: Context) {
       return true;
     }
 
-    if (payload.action === "labeled") {
+    if (action === "labeled") {
       await removeLabelFromIssue(context, labelName);
-    } else if (payload.action === "unlabeled") {
+    } else if (action === "unlabeled") {
       await addLabelToIssue(context, labelName);
     }
 

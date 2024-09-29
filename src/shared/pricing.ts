@@ -7,7 +7,7 @@ export function calculateTaskPrice(context: Context, timeValue: number, priority
   return 1000 * base * timeValue * priority;
 }
 
-export function setPrice(context: Context, timeLabel: Label, priorityLabel: Label) {
+export function getPrice(context: Context, timeLabel: Label, priorityLabel: Label) {
   const logger = context.logger;
   const { labels } = context.config;
 

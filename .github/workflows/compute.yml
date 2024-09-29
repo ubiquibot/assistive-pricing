@@ -36,6 +36,9 @@ jobs:
 
       - uses: oven-sh/setup-bun@v1
 
+      - name: Install dependencies
+        run: yarn install
+
       - name: Generate Supabase Types
         run: |
           yarn install

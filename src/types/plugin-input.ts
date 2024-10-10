@@ -22,13 +22,7 @@ export const pluginSettingsSchema = T.Object(
       { default: {} }
     ),
     basePriceMultiplier: T.Number({ default: 1 }),
-    publicAccessControl: T.Object(
-      {
-        setLabel: T.Boolean({ default: false }),
-        fundExternalClosedIssue: T.Boolean({ default: false }),
-      },
-      { default: {} }
-    ),
+    fundExternalClosedIssue: T.Boolean({ default: false }),
   },
   { default: {} }
 );

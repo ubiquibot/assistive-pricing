@@ -247,7 +247,9 @@
       "node_id": "MDIzOkludGVncmF0aW9uSW5zdGFsbGF0aW9uNDgzODE5NzI="
     }
   },
-  "settings": { "testing": true },
+  "settings": {
+    "testing": true
+  },
   "authToken": "[REDACTED]",
   "ref": ""
 }

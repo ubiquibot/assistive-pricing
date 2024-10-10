@@ -1,16 +1,9 @@
 name: "Delegate Compute"
-description: "UbiquiBot Delegated Compute Action"
+description: "UbiquityOS Delegated Compute Action"
 outputs:
-  result: # id of output
+  result:
     description: "The result of a event handler"
     value: ${{ steps.mainHandler.outputs.result }}
 runs:
-  using: "composite"
-  steps:
-    - run: cd ${{ github.action_path }}
-      shell: bash
-    - run: bun install
-      shell: bash
-    - run: bun start
-      shell: bash
-      id: mainHandler
+  using: "node20"
+  main: "dist/index.js"

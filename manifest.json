@@ -1,12 +1,7 @@
 {
   "name": "Assistive pricing",
   "description": "Handles assistive pricing, and allows for users to modify labels.",
-  "ubiquity:listeners": [
-    "issues.labeled",
-    "issues.unlabeled",
-    "label.edited",
-    "issue_comment.created"
-  ],
+  "ubiquity:listeners": ["issues.labeled", "issues.unlabeled", "label.edited", "issue_comment.created", "push"],
   "commands": {
     "allow": {
       "ubiquity:example": "/allow @user1 label",
@@ -17,6 +12,18 @@
     "default": {},
     "type": "object",
     "properties": {
+      "globalConfigUpdate": {
+        "type": "object",
+        "properties": {
+          "excludeRepos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["excludeRepos"]
+      },
       "labels": {
         "default": {},
         "type": "object",
@@ -25,21 +32,38 @@
             "default": [],
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "collaboratorOnly": {
+                  "default": false,
+                  "type": "boolean"
+                }
+              },
+              "required": ["name", "collaboratorOnly"]
             }
           },
           "priority": {
             "default": [],
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "collaboratorOnly": {
+                  "default": false,
+                  "type": "boolean"
+                }
+              },
+              "required": ["name", "collaboratorOnly"]
             }
           }
         },
-        "required": [
-          "time",
-          "priority"
-        ]
+        "required": ["time", "priority"]
       },
       "basePriceMultiplier": {
         "default": 1,
@@ -58,16 +82,9 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "setLabel",
-          "fundExternalClosedIssue"
-        ]
+        "required": ["setLabel", "fundExternalClosedIssue"]
       }
     },
-    "required": [
-      "labels",
-      "basePriceMultiplier",
-      "publicAccessControl"
-    ]
+    "required": ["labels", "basePriceMultiplier", "publicAccessControl"]
   }
 }

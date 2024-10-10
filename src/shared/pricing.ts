@@ -8,22 +8,22 @@ export function calculateTaskPrice(context: Context, timeValue: number, priority
   return new Decimal(base).mul(1000).mul(timeValue).mul(priority).toDecimalPlaces(2).toString();
 }
 
-export function setPrice(context: Context, timeLabel: Label, priorityLabel: Label) {
+export function getPrice(context: Context, timeLabel: Label, priorityLabel: Label) {
   const logger = context.logger;
   const { labels } = context.config;
 
   if (!timeLabel || !priorityLabel) throw logger.error("Time or priority label is not defined");
 
-  const recognizedTimeLabels = labels.time.find((configLabel) => configLabel === timeLabel.name);
+  const recognizedTimeLabels = labels.time.find((configLabel) => configLabel.name === timeLabel.name);
   if (!recognizedTimeLabels) throw logger.error("Time label is not recognized");
 
-  const recognizedPriorityLabels = labels.priority.find((configLabel) => configLabel === priorityLabel.name);
+  const recognizedPriorityLabels = labels.priority.find((configLabel) => configLabel.name === priorityLabel.name);
   if (!recognizedPriorityLabels) throw logger.error("Priority label is not recognized");
 
-  const timeValue = calculateLabelValue(recognizedTimeLabels);
+  const timeValue = calculateLabelValue(recognizedTimeLabels.name);
   if (!timeValue) throw logger.error("Time value is not defined");
 
-  const priorityValue = calculateLabelValue(recognizedPriorityLabels);
+  const priorityValue = calculateLabelValue(recognizedPriorityLabels.name);
   if (!priorityValue) throw logger.error("Priority value is not defined");
 
   const taskPrice = calculateTaskPrice(context, timeValue, priorityValue);

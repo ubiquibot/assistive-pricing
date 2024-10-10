@@ -1,12 +1,11 @@
 import { Context } from "../types/context";
-
 import { addLabelToIssue, clearAllPriceLabelsOnIssue, createLabel, listLabelsForRepo } from "../shared/label";
 import { labelAccessPermissionsCheck } from "../shared/permissions";
-import { setPrice } from "../shared/pricing";
 import { Label, UserType } from "../types/github";
-import { AssistivePricingSettings } from "../types/plugin-input";
-import { isIssueLabelEvent } from "../types/typeguards";
+import { getPrice } from "../shared/pricing";
 import { handleParentIssue, isParentIssue, sortLabelsByValue } from "./handle-parent-issue";
+import { AssistivePricingSettings, COLLABORATOR_ONLY_DESCRIPTION } from "../types/plugin-input";
+import { isIssueLabelEvent } from "../types/typeguards";
 
 export async function onLabelChangeSetPricing(context: Context): Promise<void> {
   if (!isIssueLabelEvent(context)) {
@@ -16,7 +15,11 @@ export async function onLabelChangeSetPricing(context: Context): Promise<void> {
   const config = context.config;
   const logger = context.logger;
   const payload = context.payload;
-
+  const owner = payload.repository.owner?.login;
+  if (!owner) {
+    logger.error("No owner found in the repository");
+    return;
+  }
   const labels = payload.issue.labels;
   if (!labels) {
     logger.info(`No labels to calculate price`);
@@ -47,7 +50,7 @@ export async function onLabelChangeSetPricing(context: Context): Promise<void> {
     if (smallestPriceLabelName) {
       for (const label of sortedPriceLabels) {
         await context.octokit.issues.removeLabel({
-          owner: payload.repository.owner.login,
+          owner,
           repo: payload.repository.name,
           issue_number: payload.issue.number,
           name: label.name,
@@ -61,7 +64,7 @@ export async function onLabelChangeSetPricing(context: Context): Promise<void> {
   await setPriceLabel(context, labels, config);
 }
 
-async function setPriceLabel(context: Context, issueLabels: Label[], config: AssistivePricingSettings) {
+export async function setPriceLabel(context: Context, issueLabels: Label[], config: AssistivePricingSettings) {
   const logger = context.logger;
   const labelNames = issueLabels.map((i) => i.name);
 
@@ -80,10 +83,10 @@ async function setPriceLabel(context: Context, issueLabels: Label[], config: Ass
     return;
   }
 
-  const targetPriceLabel = setPrice(context, minLabels.time, minLabels.priority);
+  const targetPriceLabel = getPrice(context, minLabels.time, minLabels.priority);
 
   if (targetPriceLabel) {
-    await handleTargetPriceLabel(context, targetPriceLabel, labelNames);
+    await handleTargetPriceLabel(context, { name: targetPriceLabel, description: null }, labelNames);
   } else {
     await clearAllPriceLabelsOnIssue(context);
     logger.info(`Skipping action...`);
@@ -95,9 +98,19 @@ function getRecognizedLabels(labels: Label[], settings: AssistivePricingSettings
     return (typeof label === "string" || typeof label === "object") && configLabels.some((configLabel) => configLabel === label.name);
   }
 
-  const recognizedTimeLabels: Label[] = labels.filter((label: Label) => isRecognizedLabel(label, settings.labels.time));
+  const recognizedTimeLabels: Label[] = labels.filter((label: Label) =>
+    isRecognizedLabel(
+      label,
+      settings.labels.time.map((o) => o.name)
+    )
+  );
 
-  const recognizedPriorityLabels: Label[] = labels.filter((label: Label) => isRecognizedLabel(label, settings.labels.priority));
+  const recognizedPriorityLabels: Label[] = labels.filter((label: Label) =>
+    isRecognizedLabel(
+      label,
+      settings.labels.priority.map((o) => o.name)
+    )
+  );
 
   return { time: recognizedTimeLabels, priority: recognizedPriorityLabels };
 }
@@ -109,17 +122,21 @@ function getMinLabels(recognizedLabels: { time: Label[]; priority: Label[] }) {
   return { time: minTimeLabel, priority: minPriorityLabel };
 }
 
-async function handleTargetPriceLabel(context: Context, targetPriceLabel: string, labelNames: string[]) {
-  const _targetPriceLabel = labelNames.find((name) => name.includes("Price") && name.includes(targetPriceLabel));
+async function handleTargetPriceLabel(context: Context, targetPriceLabel: Pick<Label, "name" | "description">, labelNames: string[]) {
+  const { repository } = context.payload;
+  if (repository.name === "devpool-directory") {
+    targetPriceLabel.name = targetPriceLabel.name.replace("Price: ", "Pricing: ");
+  }
+  const _targetPriceLabel = labelNames.find((name) => name.includes(targetPriceLabel.name));
 
   if (_targetPriceLabel) {
-    await handleExistingPriceLabel(context, targetPriceLabel);
+    await handleExistingPriceLabel(context, targetPriceLabel.name);
   } else {
     const allLabels = await listLabelsForRepo(context);
-    if (allLabels.filter((i) => i.name.includes(targetPriceLabel)).length === 0) {
-      await createLabel(context, targetPriceLabel, "price");
+    if (allLabels.filter((i) => i.name.includes(targetPriceLabel.name)).length === 0) {
+      await createLabel(context, targetPriceLabel.name, "price", targetPriceLabel.description ? COLLABORATOR_ONLY_DESCRIPTION : undefined);
     }
-    await addPriceLabelToIssue(context, targetPriceLabel);
+    await addPriceLabelToIssue(context, targetPriceLabel.name);
   }
 }
 
@@ -163,7 +180,7 @@ async function getAllIssueEvents(context: Context) {
       per_page: 100,
     });
   } catch (err: unknown) {
-    context.logger.error("Failed to fetch lists of events", err);
+    context.logger.error("Failed to fetch lists of events", { err });
     return [];
   }
 }
